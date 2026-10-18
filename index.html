@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>QuickCart - Smart Checkout</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <!-- Auth Screens -->
+  <div id="auth-screen" class="screen">
+    <div class="auth-container">
+      <div class="auth-header">
+        <div class="logo">
+          <i class="fas fa-shopping-cart"></i>
+          <h1>QuickCart</h1>
+        </div>
+        <p class="tagline">Smart Checkout. Zero Wait.</p>
+      </div>
+
+      <!-- Login Form -->
+      <div id="login-form" class="auth-form">
+        <h2>Welcome Back!</h2>
+<form id="login-form-element" onsubmit="AuthHandlers.handleLogin(event)">
+          <div class="form-group">
+            <label for="login-username">Username</label>
+            <input type="text" id="login-username" placeholder="Enter username" required>
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" placeholder="Enter password" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">Login</button>
+        </form>
+        <p class="auth-switch">
+          Don't have an account? <a href="#" id="show-register">Sign up</a>
+        </p>
+      </div>
+
+      <!-- Register Form -->
+      <div id="register-form" class="auth-form hidden">
+        <h2>Create Account</h2>
+<form id="register-form-element" onsubmit="AuthHandlers.handleRegister(event)">
+          <div class="form-group">
+            <label for="reg-username">Username</label>
+            <input type="text" id="reg-username" placeholder="Choose a username" required minlength="3">
+          </div>
+          <div class="form-group">
+            <label for="reg-phone">Phone Number</label>
+            <input type="tel" id="reg-phone" placeholder="Enter phone number" required>
+          </div>
+          <div class="form-group">
+            <label for="reg-password">Password</label>
+            <input type="password" id="reg-password" placeholder="Create password" required minlength="6">
+          </div>
+          <div class="form-group">
+            <label for="reg-confirm-password">Confirm Password</label>
+            <input type="password" id="reg-confirm-password" placeholder="Confirm password" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">Create Account</button>
+        </form>
+        <p class="auth-switch">
+          Already have an account? <a href="#" id="show-login">Login</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App Screen -->
+  <div id="app-screen" class="screen hidden">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <button class="btn-icon menu-btn" id="btn-menu" title="Menu">
+          <i class="fas fa-bars"></i>
+        </button>
+        <span class="user-name" id="user-name"></span>
+        <span class="quick-coins-badge">
+          <i class="fas fa-coins"></i>
+          <span id="quick-coins-balance">0</span> 🪙
+        </span>
+      </div>
+      <div class="header-right">
+        <button class="btn-icon" id="btn-locations" title="Delivery Mode">
+          <i class="fas fa-map-pin"></i>
+        </button>
+        <button class="btn-icon" id="btn-logout" title="Logout">
+          <i class="fas fa-sign-out-alt"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Mode Toggle -->
+      <div class="mode-toggle">
+        <button class="mode-btn active" data-mode="offline" id="mode-offline">
+          <i class="fas fa-store"></i>
+          <span>In-Store</span>
+        </button>
+        <button class="mode-btn" data-mode="online" id="mode-online">
+          <i class="fas fa-truck"></i>
+          <span>Online</span>
+        </button>
+      </div>
+
+      <!-- Offline Mode Content -->
+      <div id="offline-content" class="mode-content active">
+        <!-- Showroom Selection -->
+        <div class="showroom-section">
+          <div class="section-header">
+            <h3><i class="fas fa-store"></i> Select Showroom</h3>
+          </div>
+          <div class="showroom-card">
+            <select id="showroom-select" class="showroom-select">
+              <option value="">-- Select Store --</option>
+              <option value="dmart-kukatpally">D-Mart Superstore (Kukatpally)</option>
+              <option value="dmart-banajo">D-Mart (Banajo)</option>
+              <option value="retail-chain">QuickCart Retail (Main)</option>
+            </select>
+            <button class="btn btn-primary btn-full" id="btn-scan-gate">
+              <i class="fas fa-qrcode"></i> Scan Gate QR & Load Products
+            </button>
+          </div>
+        </div>
+
+        <!-- Product Grid -->
+        <div class="products-section">
+          <div class="section-header">
+            <h3><i class="fas fa-box"></i> Store Products</h3>
+            <div class="search-box">
+              <i class="fas fa-search"></i>
+              <input type="text" id="product-search" placeholder="Search products...">
+            </div>
+          </div>
+          
+          <div class="product-grid" id="product-grid">
+            <!-- Products will be loaded dynamically -->
+            <div class="empty-state">
+              <i class="fas fa-store"></i>
+              <p>Select a showroom and scan gate QR to load products</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scan Barcode -->
+        <div class="scan-section">
+          <div class="scanner-frame" id="scanner-frame">
+            <div class="scanner-overlay">
+              <div class="scan-line"></div>
+            </div>
+            <div class="scan-placeholder">
+              <i class="fas fa-qrcode"></i>
+              <p>Tap to scan barcode</p>
+            </div>
+          </div>
+          <div class="scan-input-container">
+            <input type="text" id="barcode-input" placeholder="Enter barcode..." class="barcode-input">
+            <button class="btn btn-secondary" id="btn-scan-submit">
+              <i class="fas fa-plus"></i> Add
+            </button>
+          </div>
+        </div>
+
+        <!-- Scan History -->
+        <div class="scan-history-section">
+          <div class="section-header">
+            <h3><i class="fas fa-history"></i> Recent Scans</h3>
+          </div>
+          <div id="scan-history" class="scan-history-list">
+            <p class="empty-state">No items scanned yet</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Online Mode Content -->
+      <div id="online-content" class="mode-content">
+        <!-- Search -->
+        <div class="online-search-section">
+          <div class="search-box large">
+            <i class="fas fa-search"></i>
+            <input type="text" id="online-search" placeholder="Search products for delivery...">
+          </div>
+        </div>
+
+        <!-- Categories -->
+        <div class="categories-section">
+          <div class="section-header">
+            <h3><i class="fas fa-tags"></i> Categories</h3>
+          </div>
+          <div class="category-chips" id="category-chips">
+            <button class="category-chip active" data-category="all">All</button>
+            <button class="category-chip" data-category="groceries">Groceries</button>
+            <button class="category-chip" data-category="snacks">Snacks</button>
+            <button class="category-chip" data-category="beverages">Beverages</button>
+            <button class="category-chip" data-category="household">Household</button>
+          </div>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="products-section">
+          <div class="section-header">
+            <h3><i class="fas fa-box"></i> Products</h3>
+            <span class="product-count" id="product-count">0 items</span>
+          </div>
+          <div class="product-grid" id="online-product-grid">
+            <div class="empty-state">
+              <i class="fas fa-search"></i>
+              <p>Search or select category to browse products</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cart Tab -->
+      <div class="cart-section">
+        <div class="cart-header">
+          <h3><i class="fas fa-shopping-bag"></i> Your Cart</h3>
+          <div class="cart-actions">
+            <span class="cart-count-badge" id="cart-count">0</span>
+            <button class="btn-text" id="btn-clear-cart">Clear</button>
+          </div>
+        </div>
+
+        <div class="cart-items" id="cart-items">
+          <p class="empty-state">Your cart is empty. Start adding products!</p>
+        </div>
+
+        <div class="cart-summary">
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <span id="cart-subtotal">₹0</span>
+          </div>
+          <div class="summary-row">
+            <span>QuickCoins Earned</span>
+            <span class="text-green" id="cart-quickcoins">+0</span>
+          </div>
+          <div class="summary-row total">
+            <span>Total</span>
+            <span id="cart-total">₹0</span>
+          </div>
+        </div>
+
+        <!-- QuickCoins Redemption -->
+        <div class="quickcoins-redeem">
+          <h4><i class="fas fa-coins"></i> Redeem QuickCoins</h4>
+          <div class="redeemed-display">
+            <span>Available: <strong id="available-coins">0</strong></span>
+            <span>Redeemed: <strong id="redeemed-amount">₹0</strong></span>
+          </div>
+          <input type="range" id="coins-slider" min="0" max="100" value="0" class="coins-slider">
+          <div class="slider-labels">
+            <span>₹0</span>
+            <span id="slider-max-value">₹50</span>
+          </div>
+          <button class="btn btn-secondary btn-full" id="btn-toggle-redeem">
+            <i class="fas fa-coins"></i> Apply QuickCoins (₹0)
+          </button>
+        </div>
+
+        <!-- Checkout Button -->
+        <button class="btn btn-primary btn-checkout btn-full" id="btn-checkout">
+          <i class="fas fa-credit-card"></i>
+          <span id="checkout-text">Proceed to Checkout - ₹0</span>
+        </button>
+      </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-tab="home">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </button>
+      <button class="nav-item" data-tab="scan">
+        <i class="fas fa-qrcode"></i>
+        <span>Scan</span>
+      </button>
+      <button class="nav-item cart-nav" data-tab="cart">
+        <div class="cart-icon-wrapper">
+          <i class="fas fa-shopping-bag"></i>
+          <span class="cart-badge" id="nav-cart-count">0</span>
+        </div>
+        <span>Cart</span>
+      </button>
+      <button class="nav-item" data-tab="orders">
+        <i class="fas fa-receipt"></i>
+        <span>Orders</span>
+      </button>
+      <button class="nav-item" data-tab="account">
+        <i class="fas fa-user"></i>
+        <span>Account</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Delivery Location Selector -->
+  <div class="location-selector hidden" id="location-selector">
+    <div class="location-modal">
+      <div class="modal-header">
+        <h3><i class="fas fa-map-pin"></i> Delivery Mode</h3>
+        <button class="btn-close" id="btn-close-locations">&times;</button>
+      </div>
+      
+      <div class="location-options">
+        <button class="location-option active" data-mode="in-store">
+          <div class="location-icon in-store">
+            <i class="fas fa-store"></i>
+          </div>
+          <div class="location-details">
+            <strong>In-Store Pickup</strong>
+            <p>Zero-wait walkout from store</p>
+          </div>
+        </button>
+        <button class="location-option" data-mode="home-delivery">
+          <div class="location-icon home-delivery">
+            <i class="fas fa-truck"></i>
+          </div>
+          <div class="location-details">
+            <strong>Home Delivery</strong>
+            <p>Get delivery from local supermarket</p>
+          </div>
+        </button>
+      </div>
+
+      <div class="saved-locations" id="saved-locations">
+        <!-- Dynamically populated -->
+      </div>
+
+      <button class="btn btn-primary btn-full" id="btn-confirm-location">
+        Confirm Selection
+      </button>
+    </div>
+  </div>
+
+  <!-- Order History Screen -->
+  <div id="orders-screen" class="screen hidden">
+    <div class="orders-container">
+      <div class="orders-header">
+        <h2><i class="fas fa-receipt"></i> Order History</h2>
+      </div>
+      <div class="orders-list" id="orders-list">
+        <p class="empty-state">No orders yet</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account Screen -->
+  <div id="account-screen" class="screen hidden">
+    <div class="account-container">
+      <div class="account-header">
+        <div class="profile-info">
+          <div class="profile-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <h3><span id="account-username"></span></h3>
+          <p><i class="fas fa-phone"></i> <span id="account-phone"></span></p>
+        </div>
+      </div>
+      
+      <div class="account-section">
+        <h4><i class="fas fa-coins"></i> QuickCoins</h4>
+        <div class="coins-display">
+          <span class="coins-amount" id="account-coins">0</span>
+          <span class="coins-label">QuickCoins</span>
+        </div>
+      </div>
+
+      <div class="account-section">
+        <h4><i class="fas fa-map-marker-alt"></i> Delivery Locations</h4>
+        <div class="locations-list" id="account-locations">
+          <p class="empty-state">No saved locations</p>
+        </div>
+      </div>
+
+      <div class="account-section">
+        <h4><i class="fas fa-cog"></i> Settings</h4>
+        <div class="settings-list">
+          <button class="setting-item">
+            <i class="fas fa-bell"></i>
+            <span>Notifications</span>
+            <i class="fas fa-chevron-right"></i>
+          </button>
+          <button class="setting-item">
+            <i class="fas fa-shield-alt"></i>
+            <span>Privacy</span>
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <button class="btn btn-danger btn-full" id="btn-account-logout">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    </div>
+  </div>
+
+  <!-- Checkout Screen -->
+  <div id="checkout-screen" class="screen hidden">
+    <div class="checkout-container">
+      <div class="checkout-header">
+        <h2><i class="fas fa-credit-card"></i> Checkout</h2>
+        <button class="btn-icon" id="btn-back-to-cart">
+          <i class="fas fa-arrow-left"></i>
+        </button>
+      </div>
+
+      <div class="checkout-summary">
+        <h3>Order Summary</h3>
+        <div class="checkout-items" id="checkout-items"></div>
+        <div class="checkout-total">
+          <div class="total-row">
+            <span>Subtotal</span>
+            <span>₹<span id="checkout-subtotal">0</span></span>
+          </div>
+          <div class="total-row" id="quickcoins-row">
+            <span><i class="fas fa-coins text-green"></i> QuickCoins Redeemed</span>
+            <span class="text-green">-₹<span id="checkout-coins-redeemed">0</span></span>
+          </div>
+          <div class="total-row grand-total">
+            <span>Total Payable</span>
+            <span>₹<span id="checkout-total">0</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="checkout-delivery">
+        <h3>Delivery Method</h3>
+        <div class="delivery-options">
+          <button class="delivery-option active" data-method="in-store">
+            <i class="fas fa-store"></i>
+            <div>
+              <strong>In-Store Pickup</strong>
+              <p>Collect from store immediately</p>
+            </div>
+          </button>
+          <button class="delivery-option" data-method="home-delivery">
+            <i class="fas fa-home"></i>
+            <div>
+              <strong>Home Delivery</strong>
+              <p>Delivered to your address</p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <div class="checkout-payment">
+        <h3>Payment Method</h3>
+        <div class="payment-options">
+          <button class="payment-option selected" data-method="phonepe">
+            <i class="fab fa-phonepe"></i>
+            <div>
+              <strong>PhonePe</strong>
+              <p>Pay via UPI</p>
+            </div>
+          </button>
+          <button class="payment-option" data-method="cash">
+            <i class="fas fa-money-bill-wave"></i>
+            <div>
+              <strong>Cash on Pickup</strong>
+              <p>Pay when you collect</p>
+            </div>
+          </button>
+        </div>
+        <div class="no-payment-note hidden" id="no-payment-note">
+          <i class="fas fa-check-circle text-green"></i>
+          <p>No payment required! You have enough QuickCoins.</p>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-full btn-pay" id="btn-pay-now">
+        <i class="fab fa-phonepe"></i>
+        <span id="pay-now-text">Pay Now via PhonePe</span>
+      </button>
+
+      <div class="checkout-status" id="payment-status"></div>
+    </div>
+  </div>
+
+  <!-- QR Code Screen -->
+  <div id="qr-screen" class="screen hidden">
+    <div class="qr-container">
+      <div class="qr-header">
+        <h2><i class="fas fa-qrcode"></i> Exit QR Code</h2>
+        <button class="btn-icon" id="btn-print-qr">
+          <i class="fas fa-print"></i>
+        </button>
+      </div>
+
+      <div class="qr-display">
+        <div class="qr-code-placeholder" id="qr-code-placeholder">
+          <div class="qr-spinner"></div>
+          <p>Generating QR code...</p>
+        </div>
+        <canvas id="qr-canvas" class="hidden"></canvas>
+      </div>
+
+      <div class="qr-info">
+        <p><strong>Order ID:</strong> <span id="qr-order-id"></span></p>
+        <p><strong>Items:</strong> <span id="qr-item-count"></span></p>
+        <p><strong>Total:</strong> ₹<span id="qr-total-value"></span></p>
+      </div>
+
+      <div class="qr-footnote">
+        <p>Show this QR code at the exit gate for verification.</p>
+      </div>
+
+      <button class="btn btn-secondary btn-full" id="btn-done">Done</button>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div class="toast hidden" id="toast">
+    <div class="toast-content">
+      <i class="fas fa-check-circle"></i>
+      <span id="toast-message"></span>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="auth.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
